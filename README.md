@@ -3,7 +3,7 @@ A small command line utility to manage changelogs and automate generating CHANGE
 
 ## Overview
 
-The compiled Changelog Manager executable and just be dropped into any development project, like a `[project root]/bin` or `[project root]/tools` directory.  It can be used to generate json files representing a change log entry and used to combine all the files into your project's CHANGELOG.md as well as generate a standalone [build]-CHANGELOG.md in the project root directory.
+The compiled Changelog Manager executable can just be dropped into any development project, like a `[project root]/bin` or `[project root]/tools` directory.  It can be used to generate json files representing a change log entry and used to combine all the files into your project's CHANGELOG.md as well as generate a standalone [build]-CHANGELOG.md in the project root directory.
 
 > note: Changelog Manger currently uses `git rev-parse --show-toplevel` to set `[project root]`
 
