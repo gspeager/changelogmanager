@@ -11,6 +11,7 @@ import (
 var (
 	rootPath             string
 	changelogEntriesPath string
+	changelogArchivePath string
 	changelogFilePath    string
 )
 
@@ -28,6 +29,7 @@ func main() {
 	path, _ := getAppPath()
 	rootPath = path
 	changelogEntriesPath = path + "changelogs/unreleased/"
+	changelogArchivePath = path + "changelogs/released/"
 	changelogFilePath = path + "CHANGELOG.md"
 
 	Execute()
