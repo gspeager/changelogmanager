@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"encoding/json"
 
@@ -15,9 +14,11 @@ import (
 )
 
 var (
-	build string
-	keep  bool
-	note  string
+	build   string
+	keep    bool
+	note    string
+	flavor  string
+	archive bool
 )
 
 // combineCmd represents the combine command
@@ -35,9 +36,26 @@ var combineCmd = &cobra.Command{
 			return
 		}
 
+		if _, err := os.Stat(changelogArchivePath); os.IsNotExist(err) {
+			pathErr := os.MkdirAll(changelogArchivePath, 0777)
+			if pathErr != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
 		if len(build) == 0 {
 			fmt.Println("Build is required see --help for usage")
 			return
+		}
+		if archive {
+			if _, err := os.Stat(changelogArchivePath + sanitizeDescription(build) + "/"); os.IsNotExist(err) {
+				pathErr := os.MkdirAll(changelogArchivePath+sanitizeDescription(build)+"/", 0777)
+				if pathErr != nil {
+					fmt.Println(err)
+					return
+				}
+			}
 		}
 
 		//Parse files
@@ -60,6 +78,14 @@ var combineCmd = &cobra.Command{
 					return
 				}
 
+				//archive old changelogFiles
+				if archive {
+					err = ioutil.WriteFile(changelogArchivePath+sanitizeDescription(build)+"/"+f.Name(), contents, 0644)
+					if err != nil {
+						fmt.Println(err)
+					}
+				}
+
 				var entry ChangelogEntry
 				err = json.Unmarshal(contents, &entry)
 				if err != nil {
@@ -72,27 +98,12 @@ var combineCmd = &cobra.Command{
 		}
 
 		//Build output
-		header := build + " (" + strings.Fields(time.Now().String())[0] + ")"
 		b := &bytes.Buffer{}
-		fmt.Fprintf(b, "## %s\n", header)
-		if note != "" {
-			fmt.Fprintf(b, "**%s**\n", note)
+		if len(flavor) == 0 {
+			unflavoredContent(b, changelogEntries)
+		} else {
+			buildFlavoredContent(strings.ToLower(flavor), b, changelogEntries)
 		}
-		for _, e := range changelogEntries {
-			result := "* "
-
-			if e.Platform != "" {
-				result += "[" + e.Platform + "] "
-			}
-			result += e.Message + " (" + e.Author + ")"
-
-			if e.Merge != "" {
-				result += " !" + e.Merge + "\n"
-			}
-			fmt.Fprint(b, result)
-		}
-
-		fmt.Fprintf(b, "\n")
 
 		//Write files
 		os.OpenFile(changelogFilePath, os.O_RDONLY|os.O_CREATE, 0666)
@@ -118,7 +129,7 @@ var combineCmd = &cobra.Command{
 			return
 		}
 
-		ioutil.WriteFile(rootPath+build+"-CHANGELOG.md", b.Bytes(), 0644)
+		ioutil.WriteFile(changelogArchivePath+build+"-CHANGELOG.md", b.Bytes(), 0644)
 
 		//remove old changelogFiles
 		if !keep {
@@ -134,4 +145,6 @@ func init() {
 	combineCmd.Flags().StringVarP(&build, "build", "b", "", "Required: Build version used as header in .md file")
 	combineCmd.Flags().StringVarP(&note, "note", "n", "", "Note about this build")
 	combineCmd.Flags().BoolVarP(&keep, "keep", "k", false, "Maintains the .json files in the unreleased directory")
+	combineCmd.Flags().StringVarP(&flavor, "flavor", "f", "", "Sets markdown flavor, can be 'github' or 'gitlab'")
+	combineCmd.Flags().BoolVarP(&archive, "archive", "a", false, "Archives the .json files to changelogs/released/[build]/")
 }
