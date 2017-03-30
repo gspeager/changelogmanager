@@ -48,12 +48,13 @@ var combineCmd = &cobra.Command{
 			fmt.Println("Build is required see --help for usage")
 			return
 		}
-
-		if _, err := os.Stat(changelogArchivePath + sanitizeDescription(build) + "/"); os.IsNotExist(err) {
-			pathErr := os.MkdirAll(changelogArchivePath+sanitizeDescription(build)+"/", 0777)
-			if pathErr != nil {
-				fmt.Println(err)
-				return
+		if archive {
+			if _, err := os.Stat(changelogArchivePath + sanitizeDescription(build) + "/"); os.IsNotExist(err) {
+				pathErr := os.MkdirAll(changelogArchivePath+sanitizeDescription(build)+"/", 0777)
+				if pathErr != nil {
+					fmt.Println(err)
+					return
+				}
 			}
 		}
 
